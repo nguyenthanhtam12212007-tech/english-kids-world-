@@ -1,0 +1,1077 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>English Kids World - Thế Giới Tiếng Anh Cho Bé</title>
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <!-- Font chữ Fredoka -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700;800&display=swap" rel="stylesheet">
+  
+  <!-- React & ReactDOM CDN -->
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  
+  <!-- Babel Standalone CDN -->
+  <script src="https://unpkg.com/@babel/standalone@7.23.6/babel.min.js"></script>
+  
+  <!-- Canvas Confetti CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.4/dist/confetti.browser.min.js"></script>
+
+  <style>
+    body {
+      font-family: 'Fredoka', system-ui, -apple-system, sans-serif;
+      user-select: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .custom-scrollbar::-webkit-scrollbar {
+      height: 8px;
+      width: 8px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-track {
+      background: #f1f5f9;
+      border-radius: 10px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+      background: #cbd5e1;
+      border-radius: 10px;
+    }
+  </style>
+</head>
+<body class="bg-amber-50/50 text-slate-800 min-h-screen flex flex-col antialiased">
+  <div id="root" class="min-h-screen flex flex-col"></div>
+
+  <script type="text/babel" data-presets="react,env">
+    const { useState, useEffect, createContext, useContext } = React;
+
+    // ==========================================
+    // 1. ĐA NGÔN NGỮ (TRANSLATIONS)
+    // ==========================================
+    const translations = {
+      vi: {
+        appName: "English Kids World",
+        ageU3: "Dưới 3 tuổi",
+        age34: "3–4 tuổi",
+        age56: "5–6 tuổi",
+        descU3: "Làm quen âm thanh, từ đơn sinh động & bài hát ngắn",
+        desc34: "Tập nói câu ngắn, từ vựng trực quan, màu sắc và số đếm",
+        desc56: "Luyện phát âm câu hoàn chỉnh, từ vựng mở rộng & ôn tập",
+        continueLearning: "Tiếp tục bài học",
+        badgesEarned: "Huy hiệu đã nhận",
+        completedLessons: "Bài học đã hoàn thành",
+        selectAgeGroup: "Chọn độ tuổi của bé:",
+        myLearning: "Góc học tập",
+        parentZone: "Khu vực Phụ huynh",
+        startLesson: "Bắt đầu học ngay",
+        categoriesHeader: "Khám Phá Các Chủ Đề Bài Học",
+        watchOnYoutube: "Xem trực tiếp trên YouTube",
+        privacyNotice: "English Kids World bảo mật tuyệt đối cho trẻ em."
+      },
+      en: {
+        appName: "English Kids World",
+        ageU3: "Under 3 yrs",
+        age34: "3–4 yrs",
+        age56: "5–6 yrs",
+        descU3: "First sounds, simple words & sweet rhymes",
+        desc34: "Short phrases, basic colors, numbers & objects",
+        desc56: "Full sentences, advanced vocabulary & quizzes",
+        continueLearning: "Continue Learning",
+        badgesEarned: "Badges Earned",
+        completedLessons: "Completed Lessons",
+        selectAgeGroup: "Select your child's age group:",
+        myLearning: "My Learning",
+        parentZone: "Parent Dashboard",
+        startLesson: "Start Lesson Now",
+        categoriesHeader: "Explore Learning Topics",
+        watchOnYoutube: "Watch directly on YouTube",
+        privacyNotice: "English Kids World guarantees 100% child privacy safety."
+      }
+    };
+
+    const getEmbedUrl = (url) => {
+      if (!url) return '';
+      if (url.includes('embed/')) return url;
+      let videoId = '';
+      if (url.includes('youtu.be/')) {
+        videoId = url.split('youtu.be/')[1]?.split('?')[0];
+      } else if (url.includes('watch?v=')) {
+        videoId = url.split('watch?v=')[1]?.split('&')[0];
+      }
+      return videoId ? `https://www.youtube.com/embed/${videoId}` : url;
+    };
+
+    const getWatchUrl = (url) => {
+      if (!url) return 'https://www.youtube.com';
+      if (url.includes('embed/')) {
+        const id = url.split('embed/')[1]?.split('?')[0];
+        return `https://www.youtube.com/watch?v=${id}`;
+      }
+      return url;
+    };
+
+    // ==========================================
+    // 2. DANH MỤC & DỮ LIỆU BÀI HỌC CHI TIẾT
+    // ==========================================
+    const categoriesData = [
+      { id: 'animals', nameEn: 'Animals', nameVi: 'Động vật', bgColor: 'bg-emerald-100 border-emerald-300 text-emerald-700', badgeIcon: '🐶' },
+      { id: 'fruits', nameEn: 'Fruits', nameVi: 'Trái cây', bgColor: 'bg-pink-100 border-pink-300 text-pink-700', badgeIcon: '🍎' },
+      { id: 'family', nameEn: 'Family', nameVi: 'Gia đình', bgColor: 'bg-teal-100 border-teal-300 text-teal-700', badgeIcon: '👨‍👩‍👧' },
+      { id: 'colors', nameEn: 'Colors', nameVi: 'Màu sắc', bgColor: 'bg-red-100 border-red-300 text-red-700', badgeIcon: '🎨' },
+      { id: 'numbers', nameEn: 'Numbers', nameVi: 'Số đếm', bgColor: 'bg-amber-100 border-amber-300 text-amber-700', badgeIcon: '🔢' },
+      { id: 'body', nameEn: 'Body Parts', nameVi: 'Cơ thể', bgColor: 'bg-orange-100 border-orange-300 text-orange-700', badgeIcon: '👁️' },
+      { id: 'food', nameEn: 'Food & Drinks', nameVi: 'Đồ ăn & Thức uống', bgColor: 'bg-rose-100 border-rose-300 text-rose-700', badgeIcon: '🧃' }
+    ];
+
+    const lessonsData = [
+      // ==========================================
+      // 👶 DƯỚI 3 TUỔI (Animals, Fruits, Family, Colors)
+      // ==========================================
+      {
+        id: 'u3-animals', categoryId: 'animals', titleEn: 'Cute Animals', titleVi: 'Động vật bé nhỏ', targetAge: 'u3',
+        videoUrl: 'https://youtu.be/t1tSx5cI9eg?feature=shared',
+        videoSubtitleEn: 'Cat, Dog, Bird, Duck, Cow, Pig, Sheep! Sounds of animals!',
+        speakingPhrases: [
+          { textEn: 'Cat, meow meow!', textVi: 'Con mèo, mèo méo meo!' },
+          { textEn: 'Dog, woof woof!', textVi: 'Con chó, gâu gâu!' },
+          { textEn: 'Duck, quack quack!', textVi: 'Con vịt, cạp cạp!' },
+          { textEn: 'Big cow, moo moo!', textVi: 'Bò sữa kêu bò bo!' },
+          { textEn: 'Pink pig, oink oink!', textVi: 'Chú heo hồng ỉn ỉn!' }
+        ],
+        vocabulary: [
+          { id: 'u3-a1', word: 'Cat', translation: 'Con mèo', ipa: '/kæt/', exampleEn: 'A cute cat.', exampleVi: 'Một chú mèo xinh.', icon: '🐱', imageUrl: 'https://images.unsplash.com/photo-1514888286974-6c03e2ca1dba?w=400' },
+          { id: 'u3-a2', word: 'Dog', translation: 'Con chó', ipa: '/dɒɡ/', exampleEn: 'A happy dog.', exampleVi: 'Chú chó vui vẻ.', icon: '🐶', imageUrl: 'https://images.unsplash.com/photo-1543466835-00a7907e9de1?w=400' },
+          { id: 'u3-a3', word: 'Bird', translation: 'Con chim', ipa: '/bɜːd/', exampleEn: 'Yellow bird.', exampleVi: 'Chú chim màu vàng.', icon: '🐦', imageUrl: 'https://images.unsplash.com/photo-1778120227278-b1f9031223e9?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=NHwxMjA3fDA%3D' },
+          { id: 'u3-a4', word: 'Duck', translation: 'Con vịt', ipa: '/dʌk/', exampleEn: 'Little duck.', exampleVi: 'Chú vịt con.', icon: '🦆', imageUrl: 'https://images.unsplash.com/photo-1669855207368-01a223592208?q=80&w=1170&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=NHwxMjA3fDA%3D' },
+          { id: 'u3-a5', word: 'Pig', translation: 'Con lợn', ipa: '/pɪɡ/', exampleEn: 'Pink pig.', exampleVi: 'Chú lợn hồng.', icon: '🐷', imageUrl: 'https://images.unsplash.com/photo-1516467508483-a7212febe31a?w=400' }
+        ],
+        games: [
+          { id: 'g-u3-a1', promptEn: 'Which animal says "Meow meow"?', promptVi: 'Con vật nào kêu "Mèo méo meo"?', options: [{ id: 'o1', label: 'Cat 🐱', isCorrect: true, icon: '🐱' }, { id: 'o2', label: 'Dog 🐶', isCorrect: false, icon: '🐶' }], explanationVi: 'Cat chính là con mèo!' },
+          { id: 'g-u3-a2', promptEn: 'Which animal says "Quack quack"?', promptVi: 'Con vật nào kêu "Cạp cạp"?', options: [{ id: 'o1', label: 'Duck 🦆', isCorrect: true, icon: '🦆' }, { id: 'o2', label: 'Pig 🐷', isCorrect: false, icon: '🐷' }], explanationVi: 'Duck là con vịt!' }
+        ],
+        reviewQuiz: [{ id: 'rq-u3-a1', questionEn: 'What is "Cat"?', questionVi: '"Cat" là con gì?', options: ['Con mèo', 'Con chó', 'Con vịt'], correctAnswer: 'Con mèo' }]
+      },
+      {
+        id: 'u3-fruits', categoryId: 'fruits', titleEn: 'Yummy Fruits', titleVi: 'Trái cây ngọt ngào', targetAge: 'u3',
+        videoUrl: 'https://youtu.be/T-jcaPsdUhw?feature=shared',
+        videoSubtitleEn: 'Yummy apple, sweet banana, juicy orange, sweet strawberry!',
+        speakingPhrases: [
+          { textEn: 'Yummy apple!', textVi: 'Táo ngon quá!' },
+          { textEn: 'Sweet banana!', textVi: 'Chuối ngọt quá!' },
+          { textEn: 'Red strawberry!', textVi: 'Dâu tây đỏ!' },
+          { textEn: 'Juicy orange!', textVi: 'Quả cam mọng nước!' }
+        ],
+        vocabulary: [
+          { id: 'u3-f1', word: 'Apple', translation: 'Quả táo', ipa: '/ˈæp.əl/', exampleEn: 'Red apple.', exampleVi: 'Quả táo đỏ.', icon: '🍎', imageUrl: 'https://images.unsplash.com/photo-1560806887-1e4cd0b6cbd6?w=400' },
+          { id: 'u3-f2', word: 'Banana', translation: 'Quả chuối', ipa: '/bəˈnɑː.nə/', exampleEn: 'Yellow banana.', exampleVi: 'Quả chuối vàng.', icon: '🍌', imageUrl: 'https://images.unsplash.com/photo-1571771894821-ce9b6c11b08e?w=400' },
+          { id: 'u3-f3', word: 'Orange', translation: 'Quả cam', ipa: '/ˈɒr.ɪndʒ/', exampleEn: 'Fresh orange.', exampleVi: 'Quả cam tươi.', icon: '🍊', imageUrl: 'https://images.unsplash.com/photo-1611080626919-7cf5a9dbab5b?w=400' },
+          { id: 'u3-f4', word: 'Strawberry', translation: 'Dâu tây', ipa: '/ˈstrɔː.bər.i/', exampleEn: 'Red strawberry.', exampleVi: 'Quả dâu tây đỏ.', icon: '🍓', imageUrl: 'https://images.unsplash.com/photo-1464965911861-746a04b4bca6?w=400' }
+        ],
+        games: [{ id: 'g-u3-f1', promptEn: 'Choose the Apple 🍎', promptVi: 'Bấm chọn Quả táo nhé!', options: [{ id: 'o1', label: 'Apple 🍎', isCorrect: true, icon: '🍎' }, { id: 'o2', label: 'Banana 🍌', isCorrect: false, icon: '🍌' }], explanationVi: 'Apple là quả táo!' }],
+        reviewQuiz: [{ id: 'rq-u3-f1', questionEn: 'What is "Banana"?', questionVi: '"Banana" nghĩa là gì?', options: ['Quả chuối', 'Quả táo', 'Quả cam'], correctAnswer: 'Quả chuối' }]
+      },
+      {
+        id: 'u3-family', categoryId: 'family', titleEn: 'Family Love', titleVi: 'Gia đình yêu thương', targetAge: 'u3',
+        videoUrl: 'https://m.youtube.com/watch?v=wNkRECpGibY',
+        videoSubtitleEn: 'Daddy, Mommy, Baby, Brother, Sister!',
+        speakingPhrases: [
+          { textEn: 'Daddy, I love you!', textVi: 'Bố ơi, con yêu bố!' },
+          { textEn: 'Mommy, I love you!', textVi: 'Mẹ ơi, con yêu mẹ!' },
+          { textEn: 'Sweet baby smile.', textVi: 'Em bé cười xinh.' },
+          { textEn: 'My big family.', textVi: 'Gia đình nhỏ của con.' }
+        ],
+        vocabulary: [
+          { id: 'u3-fa1', word: 'Daddy', translation: 'Bố / Cha', ipa: '/ˈdæd.i/', exampleEn: 'My daddy.', exampleVi: 'Bố của tôi.', icon: '👨', imageUrl: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=400' },
+          { id: 'u3-fa2', word: 'Mommy', translation: 'Mẹ', ipa: '/ˈmɒm.i/', exampleEn: 'My mommy.', exampleVi: 'Mẹ của tôi.', icon: '👩', imageUrl: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=400' },
+          { id: 'u3-fa3', word: 'Baby', translation: 'Em bé', ipa: '/ˈbeɪ.bi/', exampleEn: 'Cute baby.', exampleVi: 'Em bé đáng yêu.', icon: '👶', imageUrl: 'https://images.unsplash.com/photo-1519689680058-324335c77eba?w=400' },
+          { id: 'u3-fa4', word: 'Sister', translation: 'Chị / Em gái', ipa: '/ˈsɪs.tər/', exampleEn: 'Kind sister.', exampleVi: 'Chị gái hiền lành.', icon: '👧', imageUrl: 'https://images.unsplash.com/photo-1508214751196-bcfd4ca60f91?w=400' }
+        ],
+        games: [{ id: 'g-u3-fa1', promptEn: 'Who is Mommy?', promptVi: 'Ai là mẹ?', options: [{ id: 'o1', label: 'Mommy 👩', isCorrect: true, icon: '👩' }, { id: 'o2', label: 'Daddy 👨', isCorrect: false, icon: '👨' }], explanationVi: 'Mommy là mẹ.' }],
+        reviewQuiz: [{ id: 'rq-u3-fa1', questionEn: 'Who is "Daddy"?', questionVi: '"Daddy" là ai?', options: ['Bố', 'Mẹ', 'Bạn'], correctAnswer: 'Bố' }]
+      },
+      {
+        id: 'u3-colors', categoryId: 'colors', titleEn: 'Bright Colors', titleVi: 'Màu sắc cơ bản', targetAge: 'u3',
+        videoUrl: 'https://youtu.be/Ma_ixviMjcM',
+        videoSubtitleEn: 'Red, Blue, Yellow, Green, Pink!',
+        speakingPhrases: [
+          { textEn: 'Red color', textVi: 'Màu đỏ' },
+          { textEn: 'Blue sky', textVi: 'Bầu trời xanh' },
+          { textEn: 'Yellow sun', textVi: 'Mặt trời vàng' },
+          { textEn: 'Green tree', textVi: 'Cây xanh lá' }
+        ],
+        vocabulary: [
+          { id: 'u3-c1', word: 'Red', translation: 'Màu đỏ', ipa: '/red/', exampleEn: 'Red apple.', exampleVi: 'Táo đỏ.', icon: '🔴', imageUrl: 'https://images.unsplash.com/photo-1560806887-1e4cd0b6cbd6?w=400' },
+          { id: 'u3-c2', word: 'Blue', translation: 'Màu xanh dương', ipa: '/bluː/', exampleEn: 'Blue sea.', exampleVi: 'Biển xanh.', icon: '🔵', imageUrl: 'https://images.unsplash.com/photo-1534447677768-be436bb09401?w=400' },
+          { id: 'u3-c3', word: 'Yellow', translation: 'Màu vàng', ipa: '/ˈjel.əʊ/', exampleEn: 'Yellow sun.', exampleVi: 'Nắng vàng.', icon: '🟡', imageUrl: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=400' },
+          { id: 'u3-c4', word: 'Green', translation: 'Màu xanh lá', ipa: '/ɡriːn/', exampleEn: 'Green grass.', exampleVi: 'Cỏ xanh.', icon: '🟢', imageUrl: 'https://images.unsplash.com/photo-1501004318641-b39e6451bec6?w=400' }
+        ],
+        games: [{ id: 'g-u3-c1', promptEn: 'Which is RED color?', promptVi: 'Đâu là màu đỏ?', options: [{ id: 'o1', label: 'Red 🔴', isCorrect: true, icon: '🔴' }, { id: 'o2', label: 'Blue 🔵', isCorrect: false, icon: '🔵' }], explanationVi: 'Red là màu đỏ.' }],
+        reviewQuiz: [{ id: 'rq-u3-c1', questionEn: 'What is "Red"?', questionVi: '"Red" là màu gì?', options: ['Màu đỏ', 'Màu xanh', 'Màu vàng'], correctAnswer: 'Màu đỏ' }]
+      },
+
+      // ==========================================
+      // 🧸 3-4 TUỔI (Animals, Fruits, Family, Colors, Numbers, Body Parts, Food & Drinks)
+      // ==========================================
+      {
+        id: '34-animals', categoryId: 'animals', titleEn: 'Safari Animals', titleVi: 'Động vật (3-4 tuổi)', targetAge: '34',
+        videoUrl: 'https://m.youtube.com/watch?v=IOVZ8YRTV34',
+        videoSubtitleEn: 'Elephant, Lion, Monkey, Tiger, Giraffe, Zebra!',
+        speakingPhrases: [
+          { textEn: 'The elephant is big.', textVi: 'Con voi rất to lớn.' },
+          { textEn: 'The monkey likes bananas.', textVi: 'Con khỉ thích ăn chuối.' },
+          { textEn: 'Look at the tall giraffe!', textVi: 'Nhìn chú hươu cao cổ kìa!' },
+          { textEn: 'Fierce tiger in the jungle.', textVi: 'Con hổ dũng mãnh trong rừng.' }
+        ],
+        vocabulary: [
+          { id: '34-a1', word: 'Elephant', translation: 'Con voi', ipa: '/ˈel.ɪ.fənt/', exampleEn: 'Big gray elephant.', exampleVi: 'Con voi xám to lớn.', icon: '🐘', imageUrl: 'https://images.unsplash.com/photo-1557050543-4d5f4e07ef46?w=400' },
+          { id: '34-a2', word: 'Lion', translation: 'Sư tử', ipa: '/ˈlaɪ.ən/', exampleEn: 'King of jungle.', exampleVi: 'Chúa tể sơn lâm.', icon: '🦁', imageUrl: 'https://images.unsplash.com/photo-1534188753412-3e26d0d618d6?w=400' },
+          { id: '34-a3', word: 'Monkey', translation: 'Con khỉ', ipa: '/ˈmʌŋ.ki/', exampleEn: 'Playful monkey.', exampleVi: 'Chú khỉ hay đùa.', icon: '🐒', imageUrl: 'https://images.unsplash.com/photo-1540573133985-87b6da6d54a9?w=400' },
+          { id: '34-a4', word: 'Giraffe', translation: 'Hươu cao cổ', ipa: '/dʒɪˈrɑːf/', exampleEn: 'Tall giraffe.', exampleVi: 'Hươu cao cổ.', icon: '🦒', imageUrl: 'https://images.unsplash.com/photo-1547721064-da6cfb341d50?w=400' },
+          { id: '34-a5', word: 'Tiger', translation: 'Con hổ', ipa: '/ˈtaɪ.ɡər/', exampleEn: 'Striped tiger.', exampleVi: 'Con hổ có vằn.', icon: '🐯', imageUrl: 'https://images.unsplash.com/photo-1561731216-c3a4d99437d5?w=400' }
+        ],
+        games: [{ id: 'g-34-a1', promptEn: 'Which animal is an ELEPHANT?', promptVi: 'Đâu là con voi?', options: [{ id: 'o1', label: 'Elephant 🐘', isCorrect: true, icon: '🐘' }, { id: 'o2', label: 'Lion 🦁', isCorrect: false, icon: '🦁' }], explanationVi: 'Elephant là con voi.' }],
+        reviewQuiz: [{ id: 'rq-34-a1', questionEn: 'What is "Elephant"?', questionVi: '"Elephant" là con gì?', options: ['Con voi', 'Sư tử', 'Con hổ'], correctAnswer: 'Con voi' }]
+      },
+      {
+        id: '34-fruits', categoryId: 'fruits', titleEn: 'Tropical Fruits', titleVi: 'Trái cây nhiệt đới (3-4 tuổi)', targetAge: '34',
+        videoUrl: 'https://m.youtube.com/watch?v=QQZ03_v3K6Y',
+        videoSubtitleEn: 'Watermelon, Mango, Pineapple, Papaya, Grape!',
+        speakingPhrases: [
+          { textEn: 'I love watermelon.', textVi: 'Tôi thích ăn dưa hấu.' },
+          { textEn: 'Sweet yellow mango.', textVi: 'Quả xoài vàng ngọt lịm.' },
+          { textEn: 'Juicy pineapples are yummy.', textVi: 'Dứa mọng nước rất ngon.' },
+          { textEn: 'Purple grapes in a basket.', textVi: 'Nho tím trong giỏ.' }
+        ],
+        vocabulary: [
+          { id: '34-f1', word: 'Watermelon', translation: 'Dưa hấu', ipa: '/ˈwɔː.təˌmel.ən/', exampleEn: 'Fresh watermelon.', exampleVi: 'Dưa hấu tươi mát.', icon: '🍉', imageUrl: 'https://images.unsplash.com/photo-1587049352847-4a222e784d38?w=400' },
+          { id: '34-f2', word: 'Mango', translation: 'Quả xoài', ipa: '/ˈmæŋ.ɡəʊ/', exampleEn: 'Sweet mango.', exampleVi: 'Xoài ngọt.', icon: '🥭', imageUrl: 'https://images.unsplash.com/photo-1553279768-865429fa0078?w=400' },
+          { id: '34-f3', word: 'Pineapple', translation: 'Quả dứa', ipa: '/ˈpaɪnˌæp.əl/', exampleEn: 'Yellow pineapple.', exampleVi: 'Quả dứa vàng.', icon: '🍍', imageUrl: 'https://images.unsplash.com/photo-1550258987-190a2d41a8ba?w=400' },
+          { id: '34-f4', word: 'Grape', translation: 'Quả nho', ipa: '/ɡreɪp/', exampleEn: 'Purple grape.', exampleVi: 'Nho tím.', icon: '🍇', imageUrl: 'https://images.unsplash.com/photo-1537640538966-79f369143f8f?w=400' }
+        ],
+        games: [{ id: 'g-34-f1', promptEn: 'Choose Watermelon 🍉', promptVi: 'Chọn dưa hấu', options: [{ id: 'o1', label: 'Watermelon 🍉', isCorrect: true, icon: '🍉' }, { id: 'o2', label: 'Mango 🥭', isCorrect: false, icon: '🥭' }], explanationVi: 'Watermelon là dưa hấu.' }],
+        reviewQuiz: [{ id: 'rq-34-f1', questionEn: 'What is "Watermelon"?', questionVi: '"Watermelon" là gì?', options: ['Dưa hấu', 'Xoài', 'Cam'], correctAnswer: 'Dưa hấu' }]
+      },
+      {
+        id: '34-family', categoryId: 'family', titleEn: 'My Happy Family', titleVi: 'Gia đình hạnh phúc (3-4 tuổi)', targetAge: '34',
+        videoUrl: 'https://m.youtube.com/watch?v=Bh7fV7GuZFA',
+        videoSubtitleEn: 'Father, Mother, Brother, Sister, Grandma, Grandpa!',
+        speakingPhrases: [
+          { textEn: 'This is my mother.', textVi: 'Đây là mẹ của tôi.' },
+          { textEn: 'My father is brave.', textVi: 'Bố tôi rất dũng cảm.' },
+          { textEn: 'I play with my brother.', textVi: 'Tôi chơi cùng anh trai.' },
+          { textEn: 'Grandma gives me apples.', textVi: 'Bà cho tôi những quả táo.' }
+        ],
+        vocabulary: [
+          { id: '34-fam1', word: 'Mother', translation: 'Mẹ', ipa: '/ˈmʌð.ər/', exampleEn: 'My mother.', exampleVi: 'Mẹ tôi.', icon: '👩', imageUrl: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=400' },
+          { id: '34-fam2', word: 'Father', translation: 'Bố', ipa: '/ˈfɑː.ðər/', exampleEn: 'My father.', exampleVi: 'Bố tôi.', icon: '👨', imageUrl: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=400' },
+          { id: '34-fam3', word: 'Brother', translation: 'Anh / Em trai', ipa: '/ˈbrʌð.ər/', exampleEn: 'Big brother.', exampleVi: 'Anh trai.', icon: '👦', imageUrl: 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=400' },
+          { id: '34-fam4', word: 'Grandma', translation: 'Bà', ipa: '/ˈɡræn.mɑː/', exampleEn: 'Kind grandma.', exampleVi: 'Bà hiền từ.', icon: '👵', imageUrl: 'https://images.unsplash.com/photo-1581579438747-1dc8d1e37fcd?w=400' }
+        ],
+        games: [{ id: 'g-34-fam1', promptEn: 'Who is Mother?', promptVi: 'Ai là mẹ?', options: [{ id: 'o1', label: 'Mother 👩', isCorrect: true, icon: '👩' }, { id: 'o2', label: 'Brother 👦', isCorrect: false, icon: '👦' }], explanationVi: 'Mother là mẹ.' }],
+        reviewQuiz: [{ id: 'rq-34-fam1', questionEn: 'What is "Mother"?', questionVi: '"Mother" là ai?', options: ['Mẹ', 'Bà', 'Cô'], correctAnswer: 'Mẹ' }]
+      },
+      {
+        id: '34-colors', categoryId: 'colors', titleEn: 'Rainbow Colors', titleVi: 'Màu sắc rực rỡ (3-4 tuổi)', targetAge: '34',
+        videoUrl: 'https://m.youtube.com/watch?v=z0HZNaM7gTg',
+        videoSubtitleEn: 'Pink, Purple, Brown, Black, White, Orange!',
+        speakingPhrases: [
+          { textEn: 'The rose is pink.', textVi: 'Bông hồng màu hồng.' },
+          { textEn: 'Purple butterflies fly high.', textVi: 'Bướm tím bay cao.' },
+          { textEn: 'Brown bear in the forest.', textVi: 'Gấu nâu trong rừng.' },
+          { textEn: 'White clouds in blue sky.', textVi: 'Mây trắng trên trời xanh.' }
+        ],
+        vocabulary: [
+          { id: '34-c1', word: 'Pink', translation: 'Màu hồng', ipa: '/pɪŋk/', exampleEn: 'Pink rose.', exampleVi: 'Hoa hồng.', icon: '🌸', imageUrl: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTHgFdoRf9G_7Hn6ilJd27TvoaO9Hr82D57sEC7APJzjw&s=10' },
+          { id: '34-c2', word: 'Purple', translation: 'Màu tím', ipa: '/ˈpɜː.pəl/', exampleEn: 'Purple flower.', exampleVi: 'Hoa tím.', icon: '💜', imageUrl: 'https://www.google.com/imgres?imgurl=https://i.pinimg.com/736x/3d/3c/e7/3d3ce7fbb7862bbf635cc0ba3ff922b6.jpg&imgrefurl=https://www.pinterest.com/ninh2167/background-t%25C3%25ADm/&h=553&w=736&tbnid=guW26DfI_fL_NM&source=sa.im&usg=AI4_-kSxPXRXkNT27AkwGIFG3JD9bQytUQ&vet=1&docid=C9tvERTgpOzVxM&shem=epsd1,nisbtsa2,nisbtsal,rimspwouoe,aimgspe,' },
+          { id: '34-c3', word: 'Brown', translation: 'Màu nâu', ipa: '/braʊn/', exampleEn: 'Brown dog.', exampleVi: 'Chó nâu.', icon: '🤎', imageUrl: 'https://www.google.com/imgres?imgurl=https://printgo.vn/uploads/media/792227/y-nghia-mau-nau-12_1624415041.jpg&imgrefurl=https://printgo.vn/mau-nau-v2828&h=400&w=600&tbnid=V8Y22v3C5T544M&source=sa.im&usg=AI4_-kQf98K2B90Qkktu8txt5rM3Sc1raA&vet=1&docid=V9ca3Tb7MRBL4M&shem=epsd1,nisbtsa2,nisbtsal,rimspwouoe,aimgspe,' },
+          { id: '34-c4', word: 'White', translation: 'Màu trắng', ipa: '/waɪt/', exampleEn: 'White cat.', exampleVi: 'Mèo trắng.', icon: '🤍', imageUrl: 'https://www.google.com/imgres?imgurl=https://ecopillo.com.vn/wp-content/uploads/2025/07/Mau-trang-scaled.jpg&imgrefurl=https://ecopillo.com.vn/y-nghia-cua-mau-trang/?srsltid%3DAYCX9vKwSQSunvJg_KEZLMqlmaA_ruO1AEmC-u9tzKdzA5iuLbCq5QE0&h=1707&w=2560&tbnid=oJxi7u0OEAc-eM&source=sa.im&usg=AI4_-kRq7g0PeKZmGQquu8FkpY3qJ6If2Q&vet=1&docid=d6RoikvEGXVMnM&shem=epsd1,nisbtsa2,nisbtsal,rimspwouoe,aimgspe,' }
+        ],
+        games: [{ id: 'g-34-c1', promptEn: 'Which color is PINK?', promptVi: 'Đâu là màu hồng?', options: [{ id: 'o1', label: 'Pink 🌸', isCorrect: true, icon: '🌸' }, { id: 'o2', label: 'Brown 🤎', isCorrect: false, icon: '🤎' }], explanationVi: 'Pink là màu hồng.' }],
+        reviewQuiz: [{ id: 'rq-34-c1', questionEn: 'What is "Pink"?', questionVi: '"Pink" là màu gì?', options: ['Màu hồng', 'Màu nâu', 'Màu trắng'], correctAnswer: 'Màu hồng' }]
+      },
+      {
+        id: '34-numbers', categoryId: 'numbers', titleEn: 'Fun Numbers', titleVi: 'Số đếm vui nhộn (3-4 tuổi)', targetAge: '34',
+        videoUrl: 'https://m.youtube.com/watch?v=2UNnF7LbcMk',
+        videoSubtitleEn: 'One, Two, Three, Four, Five, Six, Seven, Eight, Nine, Ten!',
+        speakingPhrases: [
+          { textEn: 'One, two, three apples.', textVi: 'Một, hai, ba quả táo.' },
+          { textEn: 'I have five fingers.', textVi: 'Tôi có năm ngón tay.' },
+          { textEn: 'Number six is red.', textVi: 'Số sáu có màu đỏ.' },
+          { textEn: 'Ten balloons in total.', textVi: 'Tất cả là mười quả bóng.' }
+        ],
+        vocabulary: [
+          { id: '34-n1', word: 'One (1)', translation: 'Số một', ipa: '/wʌn/', exampleEn: 'One star.', exampleVi: 'Một ngôi sao.', icon: '1️⃣', imageUrl: 'https://images.unsplash.com/photo-1621440318464-72633426377b?q=80&w=1167&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=NHwxMjA3fDA%3D' },
+          { id: '34-n2', word: 'Five (5)', translation: 'Số năm', ipa: '/faɪv/', exampleEn: 'Five fingers.', exampleVi: 'Năm ngón tay.', icon: '5️⃣', imageUrl: 'https://images.unsplash.com/photo-1582731489394-51b65c9fcb04?q=80&w=1170&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=NHwxMjA3fDA%3D' },
+          { id: '34-n3', word: 'Six (6)', translation: 'Số sáu', ipa: '/sɪks/', exampleEn: 'Six birds.', exampleVi: 'Sáu con chim.', icon: '6️⃣', imageUrl: 'https://plus.unsplash.com/premium_photo-1669349127561-6e8ae10b8642?q=80&w=880&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=NHwxMjA3fDA%3D' },
+          { id: '34-n4', word: 'Ten (10)', translation: 'Số mười', ipa: '/ten/', exampleEn: 'Ten cars.', exampleVi: 'Mười chiếc xe.', icon: '🔟', imageUrl: 'https://plus.unsplash.com/premium_photo-1664301740591-72c1099d6728?q=80&w=1170&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=NHwxMjA3fDA%3D' }
+        ],
+        games: [{ id: 'g-34-n1', promptEn: 'What is number 6?', promptVi: 'Số 6 là gì?', options: [{ id: 'o1', label: 'Six 6️⃣', isCorrect: true, icon: '6️⃣' }, { id: 'o2', label: 'Ten 🔟', isCorrect: false, icon: '🔟' }], explanationVi: 'Six là số 6.' }],
+        reviewQuiz: [{ id: 'rq-34-n1', questionEn: 'What is "Six"?', questionVi: '"Six" là số mấy?', options: ['Số 6', 'Số 10', 'Số 5'], correctAnswer: 'Số 6' }]
+      },
+      {
+        id: '34-body', categoryId: 'body', titleEn: 'My Body', titleVi: 'Cơ thể của bé (3-4 tuổi)', targetAge: '34',
+        videoUrl: 'https://youtu.be/2Adsym569vk',
+        videoSubtitleEn: 'Head, shoulders, knees, toes, eyes, ears, mouth, nose!',
+        speakingPhrases: [
+          { textEn: 'Touch your head.', textVi: 'Chạm vào đầu của bạn.' },
+          { textEn: 'I see with two eyes.', textVi: 'Tôi nhìn bằng hai mắt.' },
+          { textEn: 'Clap your hands together.', textVi: 'Vỗ đôi bàn tay nào.' },
+          { textEn: 'Wiggle your toes.', textVi: 'Cử động các ngón chân.' }
+        ],
+        vocabulary: [
+          { id: '34-b1', word: 'Head', translation: 'Cái đầu', ipa: '/hed/', exampleEn: 'Nod your head.', exampleVi: 'Gật đầu.', icon: '🗣️', imageUrl: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=400' },
+          { id: '34-b2', word: 'Eyes', translation: 'Đôi mắt', ipa: '/aɪz/', exampleEn: 'Bright eyes.', exampleVi: 'Đôi mắt sáng.', icon: '👀', imageUrl: 'https://images.unsplash.com/photo-1494869042583-f6c911f04b4c?q=80&w=1170&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=NHwxMjA3fDA%3D' },
+          { id: '34-b3', word: 'Nose', translation: 'Cái mũi', ipa: '/nəʊz/', exampleEn: 'Small nose.', exampleVi: 'Mũi xinh.', icon: '👃', imageUrl: 'https://plus.unsplash.com/premium_photo-1723118969131-19b45603dbb3?q=80&w=1332&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=NHwxMjA3fDA%3D' },
+          { id: '34-b4', word: 'Hands', translation: 'Bàn tay', ipa: '/hændz/', exampleEn: 'Clean hands.', exampleVi: 'Bàn tay sạch.', icon: '🤲', imageUrl: 'https://images.unsplash.com/photo-1556848527-f7c548b972b2?q=80&w=1170&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=NHwxMjA3fDA%3D' }
+        ],
+        games: [
+          { id: 'g-34-b1', promptEn: 'Which body part is "HEAD"?', promptVi: 'Đâu là CÁI ĐẦU?', options: [{ id: 'o1', label: 'Head 🗣️', isCorrect: true, icon: '🗣️' }, { id: 'o2', label: 'Eyes 👀', isCorrect: false, icon: '👀' }], explanationVi: 'Head chính là cái đầu!' },
+          { id: 'g-34-b2', promptEn: 'Which body part is "EYES"?', promptVi: 'Đâu là ĐÔI MẮT?', options: [{ id: 'o1', label: 'Eyes 👀', isCorrect: true, icon: '👀' }, { id: 'o2', label: 'Nose 👃', isCorrect: false, icon: '👃' }], explanationVi: 'Eyes chính là đôi mắt!' }
+        ],
+        reviewQuiz: [{ id: 'rq-34-b1', questionEn: 'What is "Head"?', questionVi: '"Head" là gì?', options: ['Đầu', 'Mắt', 'Mũi'], correctAnswer: 'Đầu' }]
+      },
+      {
+        id: '34-food', categoryId: 'food', titleEn: 'Yummy Meals', titleVi: 'Đồ ăn & Thức uống (3-4 tuổi)', targetAge: '34',
+        videoUrl: 'https://youtu.be/O39N68LUUJ8',
+        videoSubtitleEn: 'Milk, Juice, Bread, Rice, Soup, Cake!',
+        speakingPhrases: [
+          { textEn: 'I like cold milk.', textVi: 'Tôi thích sữa mát.' },
+          { textEn: 'Sweet orange juice.', textVi: 'Nước cam ngọt lịm.' },
+          { textEn: 'Eat fresh bread for lunch.', textVi: 'Ăn bánh mì tươi bữa trưa.' },
+          { textEn: 'Birthday cake is delicious.', textVi: 'Bánh sinh nhật rất ngon.' }
+        ],
+        vocabulary: [
+          { id: '34-fd1', word: 'Milk', translation: 'Sữa tươi', ipa: '/mɪlk/', exampleEn: 'Fresh milk.', exampleVi: 'Sữa tươi.', icon: '🥛', imageUrl: 'https://images.unsplash.com/photo-1550583724-b2692b85b150?w=400' },
+          { id: '34-fd2', word: 'Juice', translation: 'Nước ép', ipa: '/dʒuːs/', exampleEn: 'Orange juice.', exampleVi: 'Nước cam.', icon: '🧃', imageUrl: 'https://images.unsplash.com/photo-1621506289937-a8e4df240d0b?w=400' },
+          { id: '34-fd3', word: 'Bread', translation: 'Bánh mì', ipa: '/bred/', exampleEn: 'Warm bread.', exampleVi: 'Bánh mì nóng.', icon: '🍞', imageUrl: 'https://images.unsplash.com/photo-1509440159596-0249088772ff?w=400' },
+          { id: '34-fd4', word: 'Cake', translation: 'Bánh ngọt', ipa: '/keɪk/', exampleEn: 'Sweet cake.', exampleVi: 'Bánh ngọt.', icon: '🍰', imageUrl: 'https://images.unsplash.com/photo-1578985545062-69928b1d9587?w=400' }
+        ],
+        games: [{ id: 'g-34-fd1', promptEn: 'What is MILK?', promptVi: '"Milk" là gì?', options: [{ id: 'o1', label: 'Milk 🥛', isCorrect: true, icon: '🥛' }, { id: 'o2', label: 'Bread 🍞', isCorrect: false, icon: '🍞' }], explanationVi: 'Milk là sữa.' }],
+        reviewQuiz: [{ id: 'rq-34-fd1', questionEn: 'What is "Milk"?', questionVi: '"Milk" là gì?', options: ['Sữa', 'Bánh mì', 'Nước'], correctAnswer: 'Sữa' }]
+      },
+
+      // ==========================================
+      // 🎒 5-6 TUỔI (Animals, Fruits, Family, Colors, Numbers, Body Parts, Food & Drinks)
+      // ==========================================
+      {
+        id: '56-animals', categoryId: 'animals', titleEn: 'Wild Wonders', titleVi: 'Động vật nâng cao (5-6 tuổi)', targetAge: '56',
+        videoUrl: 'https://m.youtube.com/watch?v=csbbViClPp0',
+        videoSubtitleEn: 'Penguin, Kangaroo, Dolphin, Crocodile, Hippo, Zebra!',
+        speakingPhrases: [
+          { textEn: 'The dolphin swims gracefully in the ocean.', textVi: 'Chú cá heo bơi uyển chuyển dưới biển.' },
+          { textEn: 'Kangaroos carry babies in their pouches.', textVi: 'Chuột túi mang con trong chiếc túi nhỏ.' },
+          { textEn: 'Penguins walk together on ice.', textVi: 'Những chú chim cánh cụt dạo bước trên băng.' },
+          { textEn: 'Crocodiles have strong jaws and sharp teeth.', textVi: 'Cá sấu có bộ hàm khỏe và răng sắc nhọn.' }
+        ],
+        vocabulary: [
+          { id: '56-a1', word: 'Dolphin', translation: 'Cá heo', ipa: '/ˈdɒl.fɪn/', exampleEn: 'Smart dolphin.', exampleVi: 'Cá heo thông minh.', icon: '🐬', imageUrl: 'https://images.unsplash.com/photo-1591706405280-f03acb082051?q=80&w=1186&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=NHwxMjA3fDA%3D' },
+          { id: '56-a2', word: 'Kangaroo', translation: 'Chuột túi', ipa: '/ˌkæŋ.ɡərˈuː/', exampleEn: 'Jumping kangaroo.', exampleVi: 'Chuột túi nhảy cao.', icon: '🦘', imageUrl: 'https://images.unsplash.com/photo-1575699914911-0027c7b95fb6?q=80&w=1171&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=NHwxMjA3fDA%3D' },
+          { id: '56-a3', word: 'Penguin', translation: 'Chim cánh cụt', ipa: '/ˈpeŋ.ɡwɪn/', exampleEn: 'Cute penguin.', exampleVi: 'Chim cánh cụt dễ thương.', icon: '🐧', imageUrl: 'https://images.unsplash.com/photo-1598439210625-5067c578f3f6?q=80&w=1172&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=NHwxMjA3fDA%3D' },
+          { id: '56-a4', word: 'Crocodile', translation: 'Con cá sấu', ipa: '/ˈkrɒk.ə.daɪl/', exampleEn: 'Green crocodile.', exampleVi: 'Cá sấu xanh.', icon: '🐊', imageUrl: 'https://plus.unsplash.com/premium_photo-1664302677695-52aeed69ff4b?q=80&w=1174&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=NHwxMjA3fDA%3D' }
+        ],
+        games: [{ id: 'g-56-a1', promptEn: 'Which animal is a DOLPHIN?', promptVi: 'Đâu là cá heo?', options: [{ id: 'o1', label: 'Dolphin 🐬', isCorrect: true, icon: '🐬' }, { id: 'o2', label: 'Kangaroo 🦘', isCorrect: false, icon: '🦘' }], explanationVi: 'Dolphin là cá heo.' }],
+        reviewQuiz: [{ id: 'rq-56-a1', questionEn: 'What is "Dolphin"?', questionVi: '"Dolphin" là con gì?', options: ['Cá heo', 'Chuột túi', 'Chim cánh cụt'], correctAnswer: 'Cá heo' }]
+      },
+      {
+        id: '56-fruits', categoryId: 'fruits', titleEn: 'Exotic Fruits', titleVi: 'Trái cây nâng cao (5-6 tuổi)', targetAge: '56',
+        videoUrl: 'https://m.youtube.com/watch?v=7nlGrC_4MKk',
+        videoSubtitleEn: 'Avocado, Kiwi, Papaya, Durian, Dragon Fruit!',
+        speakingPhrases: [
+          { textEn: 'Avocado is healthy and creamy.', textVi: 'Quả bơ rất tốt cho sức khỏe và béo ngậy.' },
+          { textEn: 'Kiwi has brown skin and green fruit.', textVi: 'Kiwi có vỏ nâu và ruột xanh.' },
+          { textEn: 'Papaya is sweet and orange.', textVi: 'Đu đủ ngọt và có màu cam.' },
+          { textEn: 'Dragon fruit has pink skin.', textVi: 'Thanh long có vỏ màu hồng.' }
+        ],
+        vocabulary: [
+          { id: '56-f1', word: 'Avocado', translation: 'Quả bơ', ipa: '/ˌæv.əˈkɑː.dəʊ/', exampleEn: 'Green avocado.', exampleVi: 'Quả bơ xanh.', icon: '🥑', imageUrl: 'https://images.unsplash.com/photo-1523049673857-eb18f1d7b578?w=400' },
+          { id: '56-f2', word: 'Kiwi', translation: 'Quả kiwi', ipa: '/ˈkiː.wiː/', exampleEn: 'Sour kiwi.', exampleVi: 'Kiwi hơi chua.', icon: '🥝', imageUrl: 'https://images.unsplash.com/photo-1585059895524-72359e06133a?q=80&w=1170&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=NHwxMjA3fDA%3D' },
+          { id: '56-f3', word: 'Papaya', translation: 'Quả đu đủ', ipa: '/pəˈpaɪ.ə/', exampleEn: 'Sweet papaya.', exampleVi: 'Đu đủ ngọt.', icon: '🥭', imageUrl: 'https://images.unsplash.com/photo-1617112848923-cc2234396a8d?q=80&w=1074&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=NHwxMjA3fDA%3D' },
+          { id: '56-f4', word: 'Peach', translation: 'Quả đào', ipa: '/piːtʃ/', exampleEn: 'Juicy peach.', exampleVi: 'Quả đào mọng nước.', icon: '🍑', imageUrl: 'https://images.unsplash.com/photo-1639588473831-dd9d014646ae?q=80&w=1170&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=NHwxMjA3fDA%3D' }
+        ],
+        games: [{ id: 'g-56-f1', promptEn: 'What is AVOCADO?', promptVi: 'Quả bơ là gì?', options: [{ id: 'o1', label: 'Avocado 🥑', isCorrect: true, icon: '🥑' }, { id: 'o2', label: 'Kiwi 🥝', isCorrect: false, icon: '🥝' }], explanationVi: 'Avocado là quả bơ.' }],
+        reviewQuiz: [{ id: 'rq-56-f1', questionEn: 'What is "Avocado"?', questionVi: '"Avocado" là quả gì?', options: ['Quả bơ', 'Quả kiwi', 'Quả táo'], correctAnswer: 'Quả bơ' }]
+      },
+      {
+        id: '56-family', categoryId: 'family', titleEn: 'Extended Family', titleVi: 'Dòng họ & Người thân (5-6 tuổi)', targetAge: '56',
+        videoUrl: 'https://m.youtube.com/watch?v=REmTuHiLOs4',
+        videoSubtitleEn: 'Aunt, Uncle, Cousin, Parents, Relatives!',
+        speakingPhrases: [
+          { textEn: 'My aunt is a kind teacher.', textVi: 'Cô tôi là một cô giáo tốt bụng.' },
+          { textEn: 'Uncle drives a red car.', textVi: 'Chú tôi lái chiếc xe đỏ.' },
+          { textEn: 'I play games with my cousins.', textVi: 'Tôi chơi trò chơi cùng anh chị em họ.' },
+          { textEn: 'We visit grandparents on weekends.', textVi: 'Chúng tôi thăm ông bà vào cuối tuần.' }
+        ],
+        vocabulary: [
+          { id: '56-fam1', word: 'Aunt', translation: 'Cô / Dì / Bác gái', ipa: '/ɑːnt/', exampleEn: 'Kind aunt.', exampleVi: 'Cô hiền hậu.', icon: '👩‍🦰', imageUrl: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=400' },
+          { id: '56-fam2', word: 'Uncle', translation: 'Chú / Bác / Cậu', ipa: '/ˈʌŋ.kəl/', exampleEn: 'Funny uncle.', exampleVi: 'Chú vui tính.', icon: '👨‍🦰', imageUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400' },
+          { id: '56-fam3', word: 'Cousin', translation: 'Anh chị em họ', ipa: '/ˈkʌz.ən/', exampleEn: 'My cousin.', exampleVi: 'Anh em họ tôi.', icon: '🧑', imageUrl: 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=400' },
+          { id: '56-fam4', word: 'Parents', translation: 'Bố mẹ / Phụ huynh', ipa: '/ˈpeə.rənts/', exampleEn: 'Loving parents.', exampleVi: 'Cha mẹ yêu thương.', icon: '👨‍👩‍👦', imageUrl: 'https://images.unsplash.com/photo-1511895426328-dc8714191300?w=400' }
+        ],
+        games: [{ id: 'g-56-fam1', promptEn: 'What is AUNT?', promptVi: '"Aunt" là ai?', options: [{ id: 'o1', label: 'Aunt 👩‍🦰', isCorrect: true, icon: '👩‍🦰' }, { id: 'o2', label: 'Uncle 👨‍🦰', isCorrect: false, icon: '👨‍🦰' }], explanationVi: 'Aunt là cô/dì.' }],
+        reviewQuiz: [{ id: 'rq-56-fam1', questionEn: 'What is "Aunt"?', questionVi: '"Aunt" là ai?', options: ['Cô/Dì', 'Chú', 'Bà'], correctAnswer: 'Cô/Dì' }]
+      },
+      {
+        id: '56-colors', categoryId: 'colors', titleEn: 'Shades & Tones', titleVi: 'Màu sắc đặc biệt (5-6 tuổi)', targetAge: '56',
+        videoUrl: 'https://m.youtube.com/watch?v=z0HZNaM7gTg',
+        videoSubtitleEn: 'Gold, Silver, Dark Blue, Rainbow colors!',
+        speakingPhrases: [
+          { textEn: 'Shiny gold star in the sky.', textVi: 'Ngôi sao vàng kim lấp lánh trên trời.' },
+          { textEn: 'Silver coin in my pocket.', textVi: 'Đồng xu bạc trong túi.' },
+          { textEn: 'Dark blue ocean water.', textVi: 'Nước biển xanh thẫm.' },
+          { textEn: 'Beautiful colorful rainbow.', textVi: 'Cầu vồng rực rỡ sắc màu.' }	
+        ],
+        vocabulary: [
+          { id: '56-c1', word: 'Gold', translation: 'Màu vàng kim', ipa: '/ɡəʊld/', exampleEn: 'Gold star.', exampleVi: 'Sao vàng kim.', icon: '⭐', imageUrl: 'https://images.unsplash.com/photo-1760172287483-02d382f63a6f?q=80&w=1170&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=NHwxMjA3fDA%3D' },
+          { id: '56-c2', word: 'Silver', translation: 'Màu bạc', ipa: '/ˈsɪl.vər/', exampleEn: 'Silver ring.', exampleVi: 'Nhẫn bạc.', icon: '🥈', imageUrl: 'https://images.unsplash.com/photo-1634648852208-fc7e55a15751?q=80&w=741&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=NHwxMjA3fDA%3D' },
+          { id: '56-c3', word: 'Rainbow', translation: 'Cầu vồng', ipa: '/ˈreɪn.bəʊ/', exampleEn: 'Seven colors.', exampleVi: 'Bảy sắc cầu vồng.', icon: '🌈', imageUrl: 'https://plus.unsplash.com/premium_photo-1683458445045-47e27f175add?q=80&w=1331&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=NHwxMjA3fDA%3D' },
+          { id: '56-c4', word: 'Violet', translation: 'Màu hoa violet', ipa: '/ˈvaɪə.lət/', exampleEn: 'Violet sky.', exampleVi: 'Bầu trời màu tím tím.', icon: '🪻', imageUrl: 'https://images.unsplash.com/photo-1557682250-33bd709cbe85?q=80&w=1129&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=NHwxMjA3fDA%3D' }
+        ],
+        games: [{ id: 'g-56-c1', promptEn: 'What is GOLD?', promptVi: '"Gold" là màu gì?', options: [{ id: 'o1', label: 'Gold ⭐', isCorrect: true, icon: '⭐' }, { id: 'o2', label: 'Silver 🥈', isCorrect: false, icon: '🥈' }], explanationVi: 'Gold là vàng kim.' }],
+        reviewQuiz: [{ id: 'rq-56-c1', questionEn: 'What is "Gold"?', questionVi: '"Gold" là màu gì?', options: ['Vàng kim', 'Màu bạc', 'Màu đen'], correctAnswer: 'Vàng kim' }]
+      },
+      {
+        id: '56-numbers', categoryId: 'numbers', titleEn: 'Big Numbers', titleVi: 'Số đếm nâng cao (5-6 tuổi)', targetAge: '56',
+        videoUrl: 'https://m.youtube.com/watch?v=2UNnF7LbcMk',
+        videoSubtitleEn: 'Twenty, Thirty, Forty, Fifty, One Hundred!',
+        speakingPhrases: [
+          { textEn: 'Fifty birds in the sky.', textVi: '50 con chim trên trời.' },
+          { textEn: 'I can count to one hundred.', textVi: 'Tôi có thể đếm đến một trăm.' },
+          { textEn: 'Twenty students in class.', textVi: 'Hai mươi học sinh trong lớp.' },
+          { textEn: 'Thirty apples in the box.', textVi: 'Ba mươi quả táo trong hộp.' }
+        ],
+        vocabulary: [
+          { id: '56-n1', word: 'Twenty (20)', translation: 'Số hai mươi', ipa: '/ˈtwen.ti/', exampleEn: 'Twenty cars.', exampleVi: '20 xe ô tô.', icon: '2️⃣0️⃣', imageUrl: 'https://images.unsplash.com/photo-1673909607066-8146a7764c1b?q=80&w=1170&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=NHwxMjA3fDA%3D' },
+          { id: '56-n2', word: 'Fifty (50)', translation: 'Số năm mươi', ipa: '/ˈfɪf.ti/', exampleEn: 'Fifty books.', exampleVi: '50 cuốn sách.', icon: '5️⃣0️⃣', imageUrl: 'https://images.unsplash.com/photo-1599073499036-dc27fc297dc9?q=80&w=1170&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=NHwxMjA3fDA%3D' },
+          { id: '56-n3', word: 'Hundred (100)', translation: 'Số một trăm', ipa: '/ˈhʌn.drəd/', exampleEn: 'One hundred points.', exampleVi: '100 điểm.', icon: '💯', imageUrl: 'https://images.unsplash.com/photo-1558763861-5ae1a46775d7?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=NHwxMjA3fDA%3D' },
+          { id: '56-n4', word: 'Thirty (30)', translation: 'Số ba mươi', ipa: '/ˈθɜː.ti/', exampleEn: 'Thirty days.', exampleVi: '30 ngày.', icon: '3️⃣0️⃣', imageUrl: 'https://images.unsplash.com/photo-1493625445987-21ef131f4553?q=80&w=1171&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=NHwxMjA3fDA%3D' }
+        ],
+        games: [{ id: 'g-56-n1', promptEn: 'What is FIFTY?', promptVi: '"Fifty" là số mấy?', options: [{ id: 'o1', label: 'Fifty 5️⃣0️⃣', isCorrect: true, icon: '5️⃣0️⃣' }, { id: 'o2', label: 'Hundred 💯', isCorrect: false, icon: '💯' }], explanationVi: 'Fifty là số 50.' }],
+        reviewQuiz: [{ id: 'rq-56-n1', questionEn: 'What is "Fifty"?', questionVi: '"Fifty" là số mấy?', options: ['Số 50', 'Số 100', 'Số 10'], correctAnswer: 'Số 50' }]
+      },
+      {
+        id: '56-body', categoryId: 'body', titleEn: 'Body & Health', titleVi: 'Cơ thể & Sức khỏe (5-6 tuổi)', targetAge: '56',
+        videoUrl: 'https://youtu.be/8WLAQEoS6vs',
+        videoSubtitleEn: 'Elbow, ankle, stomach, shoulders, knees!',
+        speakingPhrases: [
+          { textEn: 'Move your shoulders smoothly.', textVi: 'Di chuyển đôi vai nhẹ nhàng.' },
+          { textEn: 'Bend your elbows and stretch.', textVi: 'Gập khuỷu tay và vươn người.' },
+          { textEn: 'Healthy stomach after eating.', textVi: 'Bụng khỏe mạnh sau khi ăn.' },
+          { textEn: 'Protect your knees when running.', textVi: 'Bảo vệ đầu gối khi chạy.' }
+        ],
+        vocabulary: [
+          { id: '56-b2', word: 'Elbow', translation: 'Khuỷu tay', ipa: '/ˈel.bəʊ/', exampleEn: 'Bend elbow.', exampleVi: 'Gập khuỷu tay.', icon: '🦾', imageUrl: 'https://images.unsplash.com/photo-1615997393458-98aad1851521?q=80&w=687&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=NHwxMjA3fDA%3D' },
+          { id: '56-b3', word: 'Stomach', translation: 'Cái bụng', ipa: '/ˈstʌm.ək/', exampleEn: 'Full stomach.', exampleVi: 'Bụng no.', icon: '🧍', imageUrl: 'https://plus.unsplash.com/premium_photo-1669243652420-c87cd133e959?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=NHwxMjA3fDA%3D' },
+          { id: '56-b4', word: 'Knees', translation: 'Đầu gối', ipa: '/niːz/', exampleEn: 'Bend knees.', exampleVi: 'Gập đầu gối.', icon: '🦵', imageUrl: 'https://images.unsplash.com/photo-1768043772276-5a4677395c84?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=NHwxMjA3fDA%3D' }
+        ],
+        games: [
+          { id: 'g-56-b1', promptEn: 'Which body part is "SHOULDERS"?', promptVi: 'Đâu là ĐÔI VAI?', options: [{ id: 'o1', label: 'Shoulders 💪', isCorrect: true, icon: '💪' }, { id: 'o2', label: 'Elbow 🦾', isCorrect: false, icon: '🦾' }], explanationVi: 'Shoulders là đôi vai.' },
+          { id: 'g-56-b2', promptEn: 'Which body part is "STOMACH"?', promptVi: 'Đâu là CÁI BỤNG?', options: [{ id: 'o1', label: 'Stomach 🧍', isCorrect: true, icon: '🧍' }, { id: 'o2', label: 'Knees 🦵', isCorrect: false, icon: '🦵' }], explanationVi: 'Stomach là cái bụng.' }
+        ],
+        reviewQuiz: [{ id: 'rq-56-b1', questionEn: 'What are "Shoulders"?', questionVi: '"Shoulders" là gì?', options: ['Vai', 'Ngón tay', 'Đầu gối'], correctAnswer: 'Vai' }]
+      },
+      {
+        id: '56-food', categoryId: 'food', titleEn: 'Delicious Dishes', titleVi: 'Đồ ăn & Thức uống (5-6 tuổi)', targetAge: '56',
+        videoUrl: 'https://youtu.be/yezpvLy6eRM',
+        videoSubtitleEn: 'Pizza, burger, salad, soup, spaghetti, lemonade!',
+        speakingPhrases: [
+          { textEn: 'I love eating hot pizza.', textVi: 'Tôi thích ăn bánh pizza nóng.' },
+          { textEn: 'Fresh vegetable salad.', textVi: 'Salad rau củ tươi ngon.' },
+          { textEn: 'Warm soup for dinner.', textVi: 'Súp nóng cho bữa tối.' },
+          { textEn: 'Lemonade is sweet and sour.', textVi: 'Nước chanh chua chua ngọt ngọt.' }
+        ],
+        vocabulary: [
+          { id: '56-fd1', word: 'Pizza', translation: 'Bánh pizza', ipa: '/ˈpiːt.sə/', exampleEn: 'Hot pizza.', exampleVi: 'Pizza nóng.', icon: '🍕', imageUrl: 'https://images.unsplash.com/photo-1513104890138-7c749659a591?w=400' },
+          { id: '56-fd2', word: 'Salad', translation: 'Món salad', ipa: '/ˈsæl.əd/', exampleEn: 'Green salad.', exampleVi: 'Salad xanh.', icon: '🥗', imageUrl: 'https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=400' },
+          { id: '56-fd3', word: 'Soup', translation: 'Món súp', ipa: '/suːp/', exampleEn: 'Warm soup.', exampleVi: 'Súp ấm.', icon: '🍲', imageUrl: 'https://images.unsplash.com/photo-1547592166-23ac45744acd?w=400' },
+          { id: '56-fd4', word: 'Burger', translation: 'Bánh mì kẹp', ipa: '/ˈbɜː.ɡər/', exampleEn: 'Beef burger.', exampleVi: 'Bánh burger bò.', icon: '🍔', imageUrl: 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=400' }
+        ],
+        games: [{ id: 'g-56-fd1', promptEn: 'What is PIZZA?', promptVi: '"Pizza" là gì?', options: [{ id: 'o1', label: 'Pizza 🍕', isCorrect: true, icon: '🍕' }, { id: 'o2', label: 'Salad 🥗', isCorrect: false, icon: '🥗' }], explanationVi: 'Pizza là bánh pizza.' }],
+        reviewQuiz: [{ id: 'rq-56-fd1', questionEn: 'What is "Pizza"?', questionVi: '"Pizza" là gì?', options: ['Bánh pizza', 'Salad', 'Sữa'], correctAnswer: 'Bánh pizza' }]
+      }
+    ];
+
+    // ==========================================
+    // 3. CONTEXT PROVIDER
+    // ==========================================
+    const AppContext = createContext(undefined);
+
+    const AppProvider = ({ children }) => {
+      const [lang, setLangState] = useState(() => localStorage.getItem('ekw_lang') || 'vi');
+      const [parentAccount, setParentAccount] = useState(() => {
+        const saved = localStorage.getItem('ekw_parent_account');
+        return saved ? JSON.parse(saved) : null;
+      });
+      const [parentPin, setParentPin] = useState(() => localStorage.getItem('ekw_parent_pin') || '1234');
+
+      const [userProfile, setUserProfile] = useState(() => {
+        const saved = localStorage.getItem('ekw_user_profile');
+        return saved ? JSON.parse(saved) : {
+          nickname: 'Bé Yêu',
+          avatar: '🦁',
+          ageGroup: 'u3',
+          completedLessonIds: [],
+          badges: [],
+          scores: {},
+          timeSpentMinutes: 15,
+          dailyLimitMinutes: 30,
+          lastActiveLessonId: 'u3-animals'
+        };
+      });
+
+      useEffect(() => { localStorage.setItem('ekw_lang', lang); }, [lang]);
+      useEffect(() => { localStorage.setItem('ekw_user_profile', JSON.stringify(userProfile)); }, [userProfile]);
+      useEffect(() => {
+        if (parentAccount) localStorage.setItem('ekw_parent_account', JSON.stringify(parentAccount));
+        else localStorage.removeItem('ekw_parent_account');
+      }, [parentAccount]);
+
+      const setLang = (l) => setLangState(l);
+      const setAgeGroup = (ageGroup) => setUserProfile(prev => ({ ...prev, ageGroup }));
+
+      const updateKidProfile = (nickname, avatar, ageGroup) => {
+        setUserProfile(prev => ({ ...prev, nickname, avatar, ageGroup }));
+      };
+
+      const completeLesson = (lessonId, badgeIcon, score) => {
+        setUserProfile(prev => {
+          const completed = new Set(prev.completedLessonIds);
+          completed.add(lessonId);
+          const badges = new Set(prev.badges);
+          if (badgeIcon) badges.add(badgeIcon);
+          return {
+            ...prev,
+            completedLessonIds: Array.from(completed),
+            badges: Array.from(badges),
+            scores: { ...prev.scores, [lessonId]: Math.max(prev.scores[lessonId] || 0, score) },
+            lastActiveLessonId: lessonId
+          };
+        });
+      };
+
+      const loginParent = (email, name) => setParentAccount({ email, name, loggedInAt: new Date().toISOString() });
+      const logoutParent = () => setParentAccount(null);
+      const resetProgress = () => {
+        setUserProfile({
+          nickname: 'Bé Yêu', avatar: '🦁', ageGroup: 'u3', completedLessonIds: [], badges: [], scores: {}, timeSpentMinutes: 0, dailyLimitMinutes: 30, lastActiveLessonId: 'u3-animals'
+        });
+        localStorage.removeItem('ekw_user_profile');
+      };
+
+      return (
+        <AppContext.Provider value={{
+          lang, setLang, userProfile, setAgeGroup, completeLesson, resetProgress,
+          parentAccount, loginParent, logoutParent, parentPin, setParentPin, updateKidProfile
+        }}>
+          {children}
+        </AppContext.Provider>
+      );
+    };
+
+    const useApp = () => useContext(AppContext);
+
+    // AI FEMALE VOICE SPEECH SYNTHESIS
+    const speakText = (text, lang = 'en-US') => {
+      if ('speechSynthesis' in window) {
+        window.speechSynthesis.cancel();
+        const utterance = new SpeechSynthesisUtterance(text);
+        utterance.lang = lang;
+        utterance.rate = 0.82;
+        utterance.pitch = 1.2;
+
+        const voices = window.speechSynthesis.getVoices();
+        const femaleVoice = voices.find(v => 
+          (v.lang.includes('en') || v.lang.includes('US') || v.lang.includes('GB')) &&
+          (v.name.toLowerCase().includes('female') || 
+           v.name.toLowerCase().includes('zira') || 
+           v.name.toLowerCase().includes('samantha') || 
+           v.name.toLowerCase().includes('google us english') ||
+           v.name.toLowerCase().includes('victoria') ||
+           v.name.toLowerCase().includes('karen'))
+        ) || voices.find(v => v.lang.includes('en'));
+
+        if (femaleVoice) utterance.voice = femaleVoice;
+        window.speechSynthesis.speak(utterance);
+      }
+    };
+
+    // ==========================================
+    // 4. HEADER & COMPONENTS
+    // ==========================================
+    const Header = ({ onNavigateHome, onNavigateParent, onNavigateMyLearning }) => {
+      const { lang, setLang, userProfile, parentAccount, logoutParent } = useApp();
+      const t = translations[lang];
+
+      return (
+        <header className="bg-white/95 backdrop-blur-md sticky top-0 z-50 border-b-4 border-yellow-300 shadow-sm px-4 py-3">
+          <div className="max-w-6xl mx-auto flex flex-wrap items-center justify-between gap-3">
+            <button onClick={onNavigateHome} className="flex items-center gap-2.5 group">
+              <div className="w-12 h-12 bg-yellow-400 rounded-2xl flex items-center justify-center text-2xl shadow-md group-hover:scale-105 transition-transform">
+                🦁
+              </div>
+              <span className="font-extrabold text-2xl sm:text-3xl text-indigo-600 tracking-wide">
+                English <span className="text-pink-500">Kids</span> World
+              </span>
+            </button>
+
+            <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
+              <div className="flex items-center gap-2 bg-purple-50 border-2 border-purple-200 px-3 py-1.5 rounded-2xl">
+                <span className="text-xl">{userProfile.avatar}</span>
+                <span className="font-bold text-purple-800 text-sm hidden sm:inline">{userProfile.nickname}</span>
+                <span className="bg-yellow-400 text-purple-900 font-extrabold text-xs px-2.5 py-0.5 rounded-full shadow-inner">
+                  🏆 {userProfile.badges.length}
+                </span>
+              </div>
+
+              <button onClick={onNavigateMyLearning} className="px-3 py-2 bg-slate-100 hover:bg-slate-200 rounded-2xl text-slate-700 font-extrabold text-xs sm:text-sm transition">
+                📖 <span className="hidden md:inline">{t.myLearning}</span>
+              </button>
+
+              <button onClick={onNavigateParent} className="px-3 py-2 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 rounded-2xl text-indigo-800 font-extrabold text-xs sm:text-sm transition flex items-center gap-1.5">
+                👨‍👩‍👧 <span>{parentAccount ? parentAccount.name : t.parentZone}</span>
+              </button>
+
+              {parentAccount && (
+                <button onClick={logoutParent} title="Đăng xuất" className="px-2.5 py-2 bg-red-50 hover:bg-red-100 text-red-600 rounded-2xl text-xs font-bold transition">
+                  🚪
+                </button>
+              )}
+
+              <div className="flex items-center bg-slate-100 p-1 rounded-2xl border border-slate-200">
+                <button onClick={() => setLang('vi')} className={`px-2.5 py-1 rounded-xl text-xs font-black transition ${lang === 'vi' ? 'bg-indigo-600 text-white shadow-sm' : 'text-slate-600'}`}>VIE</button>
+                <button onClick={() => setLang('en')} className={`px-2.5 py-1 rounded-xl text-xs font-black transition ${lang === 'en' ? 'bg-indigo-600 text-white shadow-sm' : 'text-slate-600'}`}>ENG</button>
+              </div>
+            </div>
+          </div>
+        </header>
+      );
+    };
+
+    const Mascot = ({ message }) => (
+      <div className="flex items-start gap-3.5 bg-amber-50 border-2 border-amber-300 p-4 rounded-3xl shadow-sm mb-6">
+        <div className="text-4xl sm:text-5xl animate-bounce shrink-0">🦁</div>
+        <div className="bg-white border-2 border-amber-200 rounded-2xl p-3.5 shadow-inner flex-1">
+          <p className="text-slate-800 font-extrabold text-sm sm:text-base leading-relaxed">{message}</p>
+        </div>
+      </div>
+    );
+
+    // Component SafeImage tự động xử lý lỗi tải ảnh
+    const SafeImage = ({ src, alt, icon = '🖼️', className }) => {
+      const [hasError, setHasError] = useState(false);
+
+      if (hasError || !src) {
+        return (
+          <div className={`flex items-center justify-center bg-amber-100 text-5xl rounded-2xl ${className}`}>
+            {icon}
+          </div>
+        );
+      }
+
+      return (
+        <img
+          src={src}
+          alt={alt}
+          className={className}
+          onError={() => setHasError(true)}
+        />
+      );
+    };
+
+    // ==========================================
+    // 5. BƯỚC HỌC BÀI TƯƠNG TÁC
+    // ==========================================
+    const Step1Video = ({ lesson }) => {
+      const { lang } = useApp();
+      const t = translations[lang];
+      const embedUrl = getEmbedUrl(lesson.videoUrl);
+      const watchUrl = getWatchUrl(lesson.videoUrl);
+
+      return (
+        <div className="bg-white p-5 sm:p-7 rounded-3xl border-4 border-indigo-100 shadow-md">
+          <h3 className="text-xl font-black text-indigo-700 mb-4 flex items-center gap-2">
+            📹 Bước 1: Xem Video Hoạt Hình Chủ Đề
+          </h3>
+          <div className="relative rounded-2xl overflow-hidden bg-black aspect-video max-w-3xl mx-auto shadow-lg border-4 border-yellow-300 mb-4">
+            <iframe
+              src={embedUrl}
+              title={lesson.titleEn}
+              className="w-full h-full object-cover"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              allowFullScreen
+            />
+          </div>
+
+          <div className="text-center mb-4">
+            <a
+              href={watchUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 bg-red-600 hover:bg-red-700 text-white font-black px-5 py-2.5 rounded-2xl text-sm shadow-md transition"
+            >
+              ▶ {t.watchOnYoutube}
+            </a>
+          </div>
+
+          <div className="p-4 bg-indigo-50 rounded-2xl text-center text-sm font-bold text-indigo-900 border border-indigo-100">
+            💬 Phụ đề gợi ý: {lesson.videoSubtitleEn}
+          </div>
+        </div>
+      );
+    };
+
+    const Step2Speaking = ({ lesson }) => {
+      const [recognizedText, setRecognizedText] = useState('');
+      const [listening, setListening] = useState(false);
+      const [activeIdx, setActiveIdx] = useState(0);
+      const phrase = lesson.speakingPhrases[activeIdx] || lesson.speakingPhrases[0];
+
+      const handleStartListen = () => {
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        if (!SpeechRecognition) {
+          alert('Trình duyệt không hỗ trợ Web Speech API.');
+          return;
+        }
+        const recognition = new SpeechRecognition();
+        recognition.lang = 'en-US';
+        recognition.onstart = () => setListening(true);
+        recognition.onend = () => setListening(false);
+        recognition.onresult = (e) => setRecognizedText(e.results[0][0].transcript);
+        recognition.start();
+      };
+
+      return (
+        <div className="bg-white p-5 sm:p-7 rounded-3xl border-4 border-pink-100 shadow-md">
+          <h3 className="text-xl font-black text-pink-600 mb-4">🗣️ Bước 2: Luyện Nói Cùng AI Giọng Nữ (Mở Rộng)</h3>
+          
+          <div className="flex gap-2 overflow-x-auto pb-3 mb-4 custom-scrollbar">
+            {lesson.speakingPhrases.map((p, idx) => (
+              <button
+                key={idx}
+                onClick={() => { setActiveIdx(idx); setRecognizedText(''); }}
+                className={`px-4 py-2 rounded-2xl font-black whitespace-nowrap transition ${activeIdx === idx ? 'bg-pink-500 text-white shadow-md' : 'bg-slate-100 text-slate-600'}`}
+              >
+                Mẫu câu {idx + 1}
+              </button>
+            ))}
+          </div>
+
+          <div className="bg-pink-50 border-2 border-pink-200 rounded-3xl p-6 text-center max-w-xl mx-auto mb-6">
+            <p className="text-3xl font-black text-slate-800 mb-2">{phrase.textEn}</p>
+            <p className="text-slate-600 font-bold mb-6">{phrase.textVi}</p>
+            <div className="flex flex-wrap justify-center gap-3">
+              <button onClick={() => speakText(phrase.textEn)} className="bg-amber-400 hover:bg-amber-500 text-amber-950 font-black px-6 py-3 rounded-2xl shadow-md transition active:scale-95">
+                🔊 Nghe giọng AI nữ
+              </button>
+              <button onClick={handleStartListen} className={`${listening ? 'bg-red-500 animate-pulse' : 'bg-emerald-500 hover:bg-emerald-600'} text-white font-black px-6 py-3 rounded-2xl shadow-md transition active:scale-95`}>
+                🎤 {listening ? 'Đang nghe bé nói...' : 'Bấm mic để nói'}
+              </button>
+            </div>
+          </div>
+          {recognizedText && <div className="text-center bg-emerald-50 border border-emerald-200 p-4 rounded-2xl font-black text-emerald-900 max-w-xl mx-auto">Nhận diện được: "{recognizedText}" 🎉</div>}
+        </div>
+      );
+    };
+
+    const Step3Vocabulary = ({ lesson }) => (
+      <div className="bg-white p-5 sm:p-7 rounded-3xl border-4 border-emerald-100 shadow-md">
+        <h3 className="text-xl font-black text-emerald-600 mb-4">📚 Bước 3: Học Từ Vựng Chi Tiết qua Hình Ảnh</h3>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+          {lesson.vocabulary.map((vocab) => (
+            <div key={vocab.id} className="bg-emerald-50/60 border-2 border-emerald-200 rounded-3xl overflow-hidden shadow-sm p-4 text-center">
+              <SafeImage
+                src={vocab.imageUrl}
+                alt={vocab.word}
+                icon={vocab.icon}
+                className="w-full h-40 object-cover rounded-2xl mb-3 shadow-inner"
+              />
+              <div className="flex justify-center items-center gap-2 mb-1">
+                <h4 className="text-2xl font-black text-slate-800">{vocab.word}</h4>
+                <button onClick={() => speakText(vocab.word)} className="p-2 bg-emerald-500 hover:bg-emerald-600 text-white rounded-full transition shadow-sm">🔊</button>
+              </div>
+              {vocab.ipa && <p className="text-xs font-mono text-emerald-700 mb-1">{vocab.ipa}</p>}
+              <p className="text-base font-extrabold text-emerald-900 mb-2">{vocab.translation}</p>
+              <div className="bg-white p-2.5 rounded-2xl border border-emerald-100 text-xs text-left">
+                <p className="font-bold text-slate-700">"{vocab.exampleEn}"</p>
+                <p className="text-slate-500">{vocab.exampleVi}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+
+    const Step4Games = ({ lesson }) => {
+      const [gameIdx, setGameIdx] = useState(0);
+      const [selectedOptId, setSelectedOptId] = useState(null);
+      const [isSubmitted, setIsSubmitted] = useState(false);
+
+      const currentGame = lesson.games[gameIdx] || lesson.games[0];
+
+      const handleSelect = (optId) => {
+        if (isSubmitted) return;
+        setSelectedOptId(optId);
+        setIsSubmitted(true);
+      };
+
+      const selectedOpt = currentGame.options.find(o => o.id === selectedOptId);
+
+      return (
+        <div className="bg-white p-5 sm:p-7 rounded-3xl border-4 border-amber-100 shadow-md">
+          <h3 className="text-xl font-black text-amber-600 mb-4 flex justify-between items-center">
+            <span>🎮 Bước 4: Trò Chơi Tương Tác Vui Nhộn</span>
+            <span className="text-xs bg-amber-100 text-amber-800 px-3 py-1 rounded-full">Câu {gameIdx + 1}/{lesson.games.length}</span>
+          </h3>
+
+          <div className="bg-amber-50 border-2 border-amber-200 rounded-3xl p-5 text-center mb-6">
+            <h4 className="text-2xl font-black text-slate-800 mb-1">{currentGame.promptEn}</h4>
+            <p className="text-slate-600 font-bold">{currentGame.promptVi}</p>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
+            {currentGame.options.map((opt) => {
+              let btnStyle = 'bg-slate-50 border-2 border-slate-200 hover:border-amber-400';
+              if (isSubmitted) {
+                if (opt.isCorrect) btnStyle = 'bg-emerald-100 border-2 border-emerald-500 text-emerald-900';
+                else if (opt.id === selectedOptId) btnStyle = 'bg-red-100 border-2 border-red-500 text-red-900';
+              }
+
+              return (
+                <button
+                  key={opt.id}
+                  onClick={() => handleSelect(opt.id)}
+                  className={`p-5 rounded-3xl font-black text-lg transition shadow-sm flex items-center justify-center gap-3 ${btnStyle}`}
+                >
+                  <span className="text-3xl">{opt.icon || '⭐'}</span>
+                  <span>{opt.label}</span>
+                </button>
+              );
+            })}
+          </div>
+
+          {isSubmitted && (
+            <div className={`p-4 rounded-2xl mb-4 border-2 ${selectedOpt?.isCorrect ? 'bg-emerald-50 border-emerald-300 text-emerald-900' : 'bg-red-50 border-red-300 text-red-900'}`}>
+              <p className="font-black text-lg">{selectedOpt?.isCorrect ? 'Chính xác! Bé quá giỏi! 🎉' : 'Chưa đúng rồi! 💪'}</p>
+              <p className="text-sm font-bold mt-1">{currentGame.explanationVi}</p>
+            </div>
+          )}
+
+          {isSubmitted && gameIdx + 1 < lesson.games.length && (
+            <div className="text-right">
+              <button
+                onClick={() => {
+                  setIsSubmitted(false);
+                  setSelectedOptId(null);
+                  setGameIdx(prev => prev + 1);
+                }}
+                className="bg-amber-500 hover:bg-amber-600 text-white font-black px-6 py-2.5 rounded-2xl shadow-md transition"
+              >
+                Câu tiếp theo ➔
+              </button>
+            </div>
+          )}
+        </div>
+      );
+    };
+
+    const Step5Review = ({ lesson, onFinish }) => {
+      const { completeLesson } = useApp();
+      const [submitted, setSubmitted] = useState(false);
+      const category = categoriesData.find(c => c.id === lesson.categoryId);
+
+      const handleFinish = () => {
+        setSubmitted(true);
+        completeLesson(lesson.id, category?.badgeIcon || '⭐', 100);
+        confetti({ particleCount: 120, spread: 80, origin: { y: 0.6 } });
+      };
+
+      return (
+        <div className="bg-white p-5 sm:p-7 rounded-3xl border-4 border-purple-100 shadow-md text-center">
+          <h3 className="text-xl font-black text-purple-600 mb-4">📝 Bước 5: Ôn Tập & Nhận Huy Hiệu</h3>
+          {!submitted ? (
+            <button onClick={handleFinish} className="bg-purple-600 hover:bg-purple-700 text-white font-black px-8 py-3.5 rounded-2xl shadow-md text-lg transition">Nộp Bài & Nhận Huy Hiệu 🏆</button>
+          ) : (
+            <div>
+              <div className="text-6xl mb-3 animate-bounce">🏆</div>
+              <h4 className="text-3xl font-black text-slate-800 mb-2">Chúc Mừng Bé Xuất Sắc!</h4>
+              <p className="text-slate-600 font-bold mb-4">Bé đã hoàn thành trọn vẹn bài học này!</p>
+              <button onClick={onFinish} className="bg-emerald-500 hover:bg-emerald-600 text-white font-black px-6 py-2.5 rounded-2xl shadow-md transition">Về Trang Chủ</button>
+            </div>
+          )}
+        </div>
+      );
+    };
+
+    const LessonPage = ({ lesson, onBack }) => {
+      const [currentStep, setCurrentStep] = useState(1);
+      return (
+        <div className="max-w-5xl mx-auto px-4 py-6">
+          <button onClick={onBack} className="bg-slate-100 hover:bg-slate-200 text-slate-700 font-black px-4 py-2 rounded-2xl transition mb-6">⬅ Trang Chủ</button>
+          <div className="flex justify-between bg-white p-2.5 rounded-2xl border-2 border-slate-100 mb-6 overflow-x-auto custom-scrollbar">
+            {[1,2,3,4,5].map(s => (
+              <button key={s} onClick={() => setCurrentStep(s)} className={`px-4 py-2 rounded-xl font-black transition ${currentStep === s ? 'bg-indigo-600 text-white' : 'text-slate-500'}`}>Bước {s}</button>
+            ))}
+          </div>
+          {currentStep === 1 && <Step1Video lesson={lesson} />}
+          {currentStep === 2 && <Step2Speaking lesson={lesson} />}
+          {currentStep === 3 && <Step3Vocabulary lesson={lesson} />}
+          {currentStep === 4 && <Step4Games lesson={lesson} />}
+          {currentStep === 5 && <Step5Review lesson={lesson} onFinish={onBack} />}
+        </div>
+      );
+    };
+
+    // ==========================================
+    // 6. TRANG CHỦ & PHỤ HUYNH
+    // ==========================================
+    const HomePage = ({ onSelectLesson }) => {
+      const { lang, userProfile, setAgeGroup } = useApp();
+      const t = translations[lang];
+
+      const activeAgeLessons = lessonsData.filter(l => l.targetAge === userProfile.ageGroup);
+      const featured = activeAgeLessons[0] || lessonsData[0];
+
+      return (
+        <div className="max-w-6xl mx-auto px-4 py-6">
+          <Mascot message="Chào mừng bé đến với English Kids World! Chọn nhóm tuổi hoặc các chủ đề sinh động để bắt đầu học nhé!" />
+
+          <div className="bg-white p-4 sm:p-6 rounded-3xl border-2 border-slate-100 shadow-sm mb-8">
+            <p className="text-center font-black text-slate-700 mb-4 text-sm sm:text-base">{t.selectAgeGroup}</p>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <button onClick={() => setAgeGroup('u3')} className={`p-4 rounded-2xl border-4 text-left font-black transition ${userProfile.ageGroup === 'u3' ? 'border-pink-400 bg-pink-50 text-pink-900 shadow-sm' : 'border-slate-100 bg-slate-50 text-slate-600'}`}>
+                <div className="text-lg">👶 {t.ageU3}</div>
+                <div className="text-xs font-bold text-slate-500 mt-1">{t.descU3}</div>
+              </button>
+              <button onClick={() => setAgeGroup('34')} className={`p-4 rounded-2xl border-4 text-left font-black transition ${userProfile.ageGroup === '34' ? 'border-amber-400 bg-amber-50 text-amber-900 shadow-sm' : 'border-slate-100 bg-slate-50 text-slate-600'}`}>
+                <div className="text-lg">🧸 {t.age34}</div>
+                <div className="text-xs font-bold text-slate-500 mt-1">{t.desc34}</div>
+              </button>
+              <button onClick={() => setAgeGroup('56')} className={`p-4 rounded-2xl border-4 text-left font-black transition ${userProfile.ageGroup === '56' ? 'border-indigo-400 bg-indigo-50 text-indigo-900 shadow-sm' : 'border-slate-100 bg-slate-50 text-slate-600'}`}>
+                <div className="text-lg">🎒 {t.age56}</div>
+                <div className="text-xs font-bold text-slate-500 mt-1">{t.desc56}</div>
+              </button>
+            </div>
+          </div>
+
+          <h3 className="text-xl font-black text-slate-800 mb-4">{t.categoriesHeader}</h3>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
+            {categoriesData.map((cat) => {
+              const targetLesson = activeAgeLessons.find(l => l.categoryId === cat.id);
+              return (
+                <div
+                  key={cat.id}
+                  onClick={() => {
+                    if (targetLesson) {
+                      onSelectLesson(targetLesson.id);
+                    } else {
+                      onSelectLesson(activeAgeLessons[0]?.id || 'u3-animals');
+                    }
+                  }}
+                  className={`p-5 rounded-3xl border-2 text-left cursor-pointer transition hover:-translate-y-1 hover:shadow-md flex flex-col justify-between h-40 ${cat.bgColor}`}
+                >
+                  <div className="text-3xl mb-2">{cat.badgeIcon}</div>
+                  <div>
+                    <h4 className="font-black text-lg leading-snug">{cat.nameEn}</h4>
+                    <p className="text-xs font-extrabold opacity-85">{cat.nameVi}</p>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          {featured && (
+            <div className="bg-gradient-to-r from-amber-400 via-orange-400 to-pink-500 rounded-3xl p-6 mb-8 text-white shadow-lg flex flex-col md:flex-row items-center justify-between gap-6">
+              <div>
+                <span className="bg-white/25 text-xs font-black uppercase tracking-wider px-3 py-1 rounded-full backdrop-blur-sm mb-2 inline-block">🔥 {t.continueLearning}</span>
+                <h2 className="text-3xl font-black mb-1">{featured.titleEn}</h2>
+                <p className="text-amber-100 font-extrabold text-sm mb-4">{featured.titleVi}</p>
+                <button onClick={() => onSelectLesson(featured.id)} className="bg-white text-orange-600 hover:bg-orange-50 font-black px-6 py-3 rounded-2xl shadow-md transition">▶ {t.startLesson}</button>
+              </div>
+              <div className="text-7xl shrink-0">🎨</div>
+            </div>
+          )}
+        </div>
+      );
+    };
+
+    const ParentDashboard = ({ onBack }) => {
+      const { userProfile, resetProgress, parentPin, updateKidProfile } = useApp();
+      const [isAuthenticated, setIsAuthenticated] = useState(false);
+      const [enteredPin, setEnteredPin] = useState('');
+      const [pinError, setPinError] = useState(false);
+      const [kidName, setKidName] = useState(userProfile.nickname);
+      const [kidAvatar, setKidAvatar] = useState(userProfile.avatar);
+      const [kidAge, setKidAge] = useState(userProfile.ageGroup);
+      const [saveNotice, setSaveNotice] = useState(false);
+
+      if (!isAuthenticated) {
+        return (
+          <div className="max-w-md mx-auto px-4 py-12">
+            <button onClick={onBack} className="bg-slate-100 font-black px-4 py-2 rounded-2xl mb-6">⬅ Quay lại</button>
+            <div className="bg-white p-6 sm:p-8 rounded-3xl border-4 border-indigo-100 shadow-md text-center">
+              <h2 className="text-2xl font-black text-slate-800 mb-2">Khóa Phụ Huynh</h2>
+              <p className="text-slate-500 font-bold text-xs mb-6">Mã PIN mặc định: <b>1234</b></p>
+              <form onSubmit={(e) => { e.preventDefault(); if(enteredPin === parentPin) setIsAuthenticated(true); else setPinError(true); }} className="space-y-4">
+                <input type="password" maxLength={4} value={enteredPin} onChange={(e) => setEnteredPin(e.target.value)} placeholder="• • • •" className="w-40 text-center text-3xl font-black tracking-widest px-4 py-3 border-4 rounded-2xl outline-none" autoFocus />
+                {pinError && <p className="text-red-500 text-xs">Sai mã PIN!</p>}
+                <button type="submit" className="w-full bg-indigo-600 text-white font-black py-3 rounded-2xl">Mở Khóa</button>
+              </form>
+            </div>
+          </div>
+        );
+      }
+
+      return (
+        <div className="max-w-4xl mx-auto px-4 py-6">
+          <button onClick={onBack} className="bg-slate-100 font-black px-4 py-2 rounded-2xl mb-6">⬅ Quay lại</button>
+          <div className="space-y-6">
+            <div className="bg-white p-6 rounded-3xl border-2 shadow-sm">
+              <h3 className="text-xl font-black mb-4">⚙️ Cài Đặt Hồ Sơ Bé</h3>
+              <form onSubmit={(e) => { e.preventDefault(); updateKidProfile(kidName, kidAvatar, kidAge); setSaveNotice(true); }} className="space-y-4">
+                <input type="text" value={kidName} onChange={(e) => setKidName(e.target.value)} className="w-full px-4 py-2.5 border rounded-xl font-bold" />
+                <button type="submit" className="bg-emerald-600 text-white font-black px-6 py-2.5 rounded-xl">Lưu Thay Đổi</button>
+                {saveNotice && <span className="ml-3 text-emerald-600 font-bold">✓ Đã lưu thành công!</span>}
+              </form>
+            </div>
+            <button onClick={() => { if(confirm('Xóa tiến độ?')) resetProgress(); }} className="bg-red-50 text-red-600 border font-bold px-4 py-2.5 rounded-2xl text-xs">🗑️ Đặt lại tiến độ học</button>
+          </div>
+        </div>
+      );
+    };
+
+    const MyLearning = ({ onBack }) => {
+      const { userProfile } = useApp();
+      return (
+        <div className="max-w-4xl mx-auto px-4 py-6">
+          <button onClick={onBack} className="bg-slate-100 font-black px-4 py-2 rounded-2xl mb-6">⬅ Quay lại</button>
+          <div className="bg-white p-6 rounded-3xl border-2 shadow-sm">
+            <h2 className="text-2xl font-black mb-4">📖 Huy hiệu của {userProfile.nickname}</h2>
+            <div className="flex flex-wrap gap-3">{userProfile.badges.map((b, i) => <div key={i} className="w-14 h-14 bg-amber-100 border-2 rounded-2xl flex items-center justify-center text-2xl">{b}</div>)}</div>
+          </div>
+        </div>
+      );
+    };
+
+    const MainApp = () => {
+      const [view, setView] = useState({ page: 'home' });
+
+      return (
+        <div className="min-h-screen flex flex-col">
+          <Header onNavigateHome={() => setView({ page: 'home' })} onNavigateParent={() => setView({ page: 'parent' })} onNavigateMyLearning={() => setView({ page: 'my-learning' })} />
+          <main className="flex-1">
+            {view.page === 'home' && <HomePage onSelectLesson={(lessonId) => setView({ page: 'lesson', lessonId })} />}
+            {view.page === 'lesson' && <LessonPage lesson={lessonsData.find(l => l.id === view.lessonId) || lessonsData[0]} onBack={() => setView({ page: 'home' })} />}
+            {view.page === 'parent' && <ParentDashboard onBack={() => setView({ page: 'home' })} />}
+            {view.page === 'my-learning' && <MyLearning onBack={() => setView({ page: 'home' })} />}
+          </main>
+        </div>
+      );
+    };
+
+    ReactDOM.createRoot(document.getElementById('root')).render(<AppProvider><MainApp /></AppProvider>);
+  </script>
+</body>
+</html>
